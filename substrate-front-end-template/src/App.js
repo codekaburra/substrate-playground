@@ -20,6 +20,7 @@ import Interactor from './Interactor'
 import Metadata from './Metadata'
 import NodeInfo from './NodeInfo'
 import TemplateModule from './TemplateModule'
+import Evelyn from './Evelyn'
 import Transfer from './Transfer'
 import Upgrade from './Upgrade'
 
@@ -80,6 +81,9 @@ function Main() {
           <Grid.Row>
             <Interactor />
             <Events />
+          </Grid.Row>
+          <Grid.Row>
+            <Evelyn />
           </Grid.Row>
           <Grid.Row>
             <TemplateModule />

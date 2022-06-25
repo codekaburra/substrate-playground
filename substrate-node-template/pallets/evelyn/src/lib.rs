@@ -24,10 +24,13 @@ pub mod pallet {
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/v3/runtime/storage
 	#[pallet::storage]
-	#[pallet::getter(fn something)]
+	#[pallet::getter(fn min_value)]
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type MinValue<T> = StorageValue<_, u32>;
+	#[pallet::storage]
+	#[pallet::getter(fn max_value)]
+	pub type MaxValue<T> = StorageValue<_, u32>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -35,17 +38,19 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+		/// parameters. [min_value, max_value, who]
+		RangeStored(u32, u32, T::AccountId),
 	}
 
-	// Errors inform users that something went wrong.
+	// Errors inform users that min_value / max_value went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Error names should be descriptive.
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
 		StorageOverflow,
+		/// Error min should be less then max.
+		InvalidRange,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -55,18 +60,21 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// An example dispatchable that takes a singles value as a parameter, writes the value to
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
+		#[pallet::weight(50_000_000)]
+		pub fn set_range(origin: OriginFor<T>, min_value: u32, max_value: u32) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/v3/runtime/origins
 			let who = ensure_signed(origin)?;
 
+			ensure!(min_value <= max_value, Error::<T>::InvalidRange);
+
 			// Update storage.
-			<Something<T>>::put(something);
+			<MinValue<T>>::put(min_value);
+			<MaxValue<T>>::put(max_value);
 
 			// Emit an event.
-			Self::deposit_event(Event::SomethingStored(something, who));
+			Self::deposit_event(Event::RangeStored(min_value, max_value, who));
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
 		}
@@ -77,17 +85,29 @@ pub mod pallet {
 			let _who = ensure_signed(origin)?;
 
 			// Read a value from storage.
-			match <Something<T>>::get() {
+			match <MinValue<T>>::get() {
 				// Return an error if the value has not been set.
 				None => return Err(Error::<T>::NoneValue.into()),
 				Some(old) => {
 					// Increment the value read from storage; will error in the event of overflow.
 					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
 					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
+					<MinValue<T>>::put(new);
 				},
 			}
+
+			// Read a value from storage.
+			match <MaxValue<T>>::get() {
+				// Return an error if the value has not been set.
+				None => return Err(Error::<T>::NoneValue.into()),
+				Some(old) => {
+					// Increment the value read from storage; will error in the event of overflow.
+					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+					// Update the value in storage with the incremented result.
+					<MaxValue<T>>::put(new);
+				},
+			}
+			Ok(())
 		}
 	}
 }
