@@ -1,2 +1,1 @@
-# substrate-playground
-# substrate-playground
+# Polkadot Substrate Playground
